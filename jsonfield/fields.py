@@ -97,21 +97,38 @@ class JSONFieldBase(six.with_metaclass(SubfieldBase, models.Field)):
         is still necessary for Django's deserializer"""
         return value
 
+    def convert(self, data):
+        if isinstance(data, bytes):      return data.decode()
+        if isinstance(data, (str, int)): return str(data)
+        if isinstance(data, dict):       return dict(map(self.convert, data.items()))
+        if isinstance(data, tuple):      return tuple(map(self.convert, data))
+        if isinstance(data, list):       return list(map(self.convert, data))
+        if isinstance(data, set):        return set(map(self.convert, data))
+
     def get_prep_value(self, value):
         """Convert JSON object to a string"""
         if self.null and value is None:
             return None
+        value = self.convert(value)
         return json.dumps(value, **self.dump_kwargs)
 
+    def _get_val_from_obj(self, obj):
+        # This function created to replace Django deprecated version
+        # https://code.djangoproject.com/ticket/24716
+        if obj is not None:
+            return getattr(obj, self.attname)
+        else:
+            return self.get_default()
+
     def value_to_string(self, obj):
-        value = self.value_from_object(obj, dump=False)
+        value = self._get_val_from_obj(obj)
         return self.get_db_prep_value(value, None)
 
-    def value_from_object(self, obj, dump=True):
+    def value_from_object(self, obj):
         value = super(JSONFieldBase, self).value_from_object(obj)
         if self.null and value is None:
             return None
-        return self.dumps_for_display(value) if dump else value
+        return self.dumps_for_display(value)
 
     def dumps_for_display(self, value):
         return json.dumps(value, **self.dump_kwargs)
@@ -158,7 +175,7 @@ class JSONField(JSONFieldBase, models.TextField):
     def dumps_for_display(self, value):
         kwargs = {"indent": 2}
         kwargs.update(self.dump_kwargs)
-        return json.dumps(value, ensure_ascii=False, **kwargs)
+        return json.dumps(value, **kwargs)
 
 
 class JSONCharField(JSONFieldBase, models.CharField):
