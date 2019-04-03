@@ -98,14 +98,18 @@ class JSONFieldBase(six.with_metaclass(SubfieldBase, models.Field)):
         return value
 
     def convert(self, data):
-        if isinstance(data, bytes): return data.decode()
-        if isinstance(data, bool): return data
-        if isinstance(data, int): return data
-        if isinstance(data, str): return str(data)
-        if isinstance(data, dict): return dict(map(self.convert, data.items()))
-        if isinstance(data, tuple): return tuple(map(self.convert, data))
-        if isinstance(data, list): return list(map(self.convert, data))
-        if isinstance(data, set): return set(map(self.convert, data))
+        if data:
+            if isinstance(data, bytes): return data.decode()
+            if isinstance(data, bool): return data
+            if isinstance(data, int): return data
+            if isinstance(data, float): return data
+            if isinstance(data, str): return str(data)
+            if isinstance(data, dict): return dict(map(self.convert, data.items()))
+            if isinstance(data, tuple): return tuple(map(self.convert, data))
+            if isinstance(data, list): return list(map(self.convert, data))
+            if isinstance(data, set): return set(map(self.convert, data))
+
+        return data
 
     def get_prep_value(self, value):
         """Convert JSON object to a string"""
