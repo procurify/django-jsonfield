@@ -1,10 +1,8 @@
 import copy
 from django.db import models
 from django.utils.translation import ugettext_lazy as _
-try:
-    from django.utils import six
-except ImportError:
-    import six
+
+import six
 
 try:
     import json
